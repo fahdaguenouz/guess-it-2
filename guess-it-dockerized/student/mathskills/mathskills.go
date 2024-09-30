@@ -1,73 +1,53 @@
 package mathskills
-
-import "math"
-
-
-func Range(numbers []float64) (int, int) {
-	x := make([]float64, len(numbers))
-	y := numbers
-
-	for i := range x {
-		x[i] = float64(i)
-	}
-
-	a, b := Regression(x, y)
-	next := float64(len(numbers))
-	pred := a + b*next
-
-	res := make([]float64, len(numbers))
-	for i := range res {
-		res[i] = y[i] - (a + b*x[i])
-	}
-
-	sd := StandardDeviation(res)
-
-	lower := int(pred - sd)
-	if lower < 1 {
-		lower = 1
-	}
-	upper := int(pred + sd)
-
-	return lower, upper
+import (
+	"math"
+)
+func RangeGuess(data []float64) (float64, float64) {
+	var min, max float64
+	slope, intercept := LinearRegression(data)
+	cov := PCC(data)
+	prediction := slope*float64(len(data)-1) + intercept
+	max = prediction + prediction*(1-cov)
+	min = prediction - prediction*(1-cov)
+	return min, max
 }
 
-func Average(numbers []float64) float64 {
-	var sum float64
-	for _, value := range numbers {
-		sum = value + sum
+func LinearRegression(data []float64) (float64, float64) {
+	sumX := 0.00
+	sumX2 := 0.00
+	sumY := 0.00
+	sumXY := 0.00
+	sumSQR := 0.00
+	lngth := float64(len(data))
+	for i := 0; i < len(data); i++ {
+		sumX += float64(i + 1)
+		sumX2 += float64(i)
+		sumY += data[i]
+		sumSQR += float64((i + 1) * (i + 1))
+		sumXY += (float64(i)) * data[i]
 	}
-	return sum / float64(len(numbers))
+	slope := ((lngth * sumXY) - (sumX2 * sumY)) / ((lngth * sumSQR) - (sumX * sumX))
+	if math.IsNaN(slope) {
+		slope = 0
+	}
+	intercept := data[len(data)-1] - (slope * float64(len(data)))
+	return slope, intercept
 }
 
-func StandardDeviation(res []float64) float64 {
-	avg := Average(res)
-	var sqrt float64
-	for _, r := range res {
-		sqrt += (r - avg) * (r - avg)
+func PCC(data []float64) float64 {
+	sumX := 0.00
+	sumY := 0.00
+	sumXY := 0.00
+	sumSQRX := 0.00
+	sumSQRY := 0.00
+	lngth := float64(len(data))
+	for i := 0; i < len(data); i++ {
+		sumX += float64(i + 1)
+		sumY += data[i]
+		sumSQRX += float64((i + 1) * (i + 1))
+		sumSQRY += data[i] * data[i]
+		sumXY += (float64(i + 1)) * data[i]
 	}
-	return math.Sqrt(sqrt / float64(len(res)-1))
-}
-
-func Regression(x, y []float64) (float64, float64) {
-	n := len(x)
-
-	var sumX float64
-	var sumY float64
-	var sumXY float64
-	var sumXX float64
-
-	for i := 0; i < n; i++ {
-		sumX += x[i]
-		sumY += y[i]
-		sumXY += x[i] * y[i]
-		sumXX += x[i] * x[i]
-	}
-
-	avgX := Average(x)
-	avgY := Average(y)
-
-	beta := (sumXY - float64(n)*avgX*avgY) / (sumXX - float64(n)*avgX*avgX)
-	alpha := avgY - beta*avgX
-
-	return alpha, beta
+	covariance := ((lngth * sumXY) - (sumX * sumY)) / math.Sqrt(((lngth*sumSQRX)-(sumX*sumX))*((lngth*sumSQRY)-(sumY*sumY)))
+	return covariance
 }

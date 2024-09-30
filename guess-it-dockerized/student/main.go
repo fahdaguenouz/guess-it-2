@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"guessit1/student/mathskills"
+	"math"
 	
 )
 
@@ -24,8 +25,8 @@ func main() {
 		dataSlice = append(dataSlice, num)
 
 		if len(dataSlice) > 1 {
-			a, b := mathskills.Range(dataSlice[:len(dataSlice)-1])
-			fmt.Printf("%d %d\n", a, b)
+			min, max := mathskills.RangeGuess(dataSlice)
+			fmt.Println(int(math.Round(min)), int(math.Round(max)))
 		}
 	}
 }
